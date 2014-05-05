@@ -36,6 +36,10 @@ sub parse_list {
 	if ($items[0]->{value} eq 'quote') {
 	  die("Too many arguments to quote") unless @items == 2;
 	  return ({type => 'quote', value => $items[1]}, $rest);
+	} elsif ($items[0]->{value} eq 'let') else {
+	  die("Uneven number of bindings in let") unless (@items % 2) == 1;
+	  shift @items;
+	  return ({type => 'let', value => [@items]}, $rest);
 	} else {
 	  return ({type => 'list', value => [@items]}, $rest);
 	}
@@ -73,6 +77,15 @@ sub transpile {
 	  push @ret, $thing->{value};
 	} elsif ($thing->{type} eq 'atom') {
 	  push @ret, $thing->{value};
+	} elsif ($thing->{type} eq 'let') {
+	  my @working = @{$thing->{value}};
+	  my @ret2;
+	  while (@working) {
+		my $key = shift;
+		my $value = shift;
+		push @ret2, "$key = $value";
+	  }
+	  push @ret, join ";" @ret2;
 	} elsif ($thing->{type} eq 'quote') {
 	  # No, this really isn't what quote does.
 	  # Also, I never wrote this code.
@@ -90,6 +103,7 @@ sub transpile {
 	  }
 	}
   }
+  return join " ", @ret;
 }
 
 sub go {
